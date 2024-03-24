@@ -89,6 +89,13 @@ async function getCurveFromName(name) {
 
 }
 
+var curves = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    getCurveFromR: getCurveFromR,
+    getCurveFromQ: getCurveFromQ,
+    getCurveFromName: getCurveFromName
+});
+
 /*
     Copyright 2018 0KIMS association.
 
@@ -12490,6 +12497,7 @@ var fflonk = /*#__PURE__*/Object.freeze({
     exportSolidityCallData: fflonkExportCallData
 });
 
+exports.curve_utils = curves;
 exports.fflonk = fflonk;
 exports.groth16 = groth16;
 exports.plonk = plonk;

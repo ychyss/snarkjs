@@ -1131,6 +1131,13 @@ async function getCurveFromName(name) {
 
 }
 
+var curves = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    getCurveFromR: getCurveFromR,
+    getCurveFromQ: getCurveFromQ,
+    getCurveFromName: getCurveFromName
+});
+
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
 var blake2bWasm = {exports: {}};
@@ -16138,4 +16145,4 @@ var fflonk = /*#__PURE__*/Object.freeze({
     exportSolidityCallData: fflonkExportCallData
 });
 
-export { fflonk, groth16, plonk, powersoftau as powersOfTau, r1cs, zkey_utils as utils, wtns, zkey as zKey };
+export { curves as curve_utils, fflonk, groth16, plonk, powersoftau as powersOfTau, r1cs, zkey_utils as utils, wtns, zkey as zKey };

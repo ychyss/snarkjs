@@ -7,3 +7,4 @@ export * as plonk from "./src/plonk.js";
 export * as fflonk from "./src/fflonk.js";
 
 export * as utils from "./src/zkey_utils.js";
+export * as curve_utils from "./src/curves.js";

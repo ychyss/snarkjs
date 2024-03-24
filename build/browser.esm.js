@@ -872,8 +872,8 @@ class BigMemFile {
     }
 }
 
-const O_TRUNC = 1024;
-const O_CREAT = 512;
+const O_TRUNC = 512;
+const O_CREAT = 256;
 const O_RDWR = 2;
 const O_RDONLY = 0;
 
@@ -2457,6 +2457,95 @@ async function writeHeader(fd, zkey) {
 
 }
 
+async function writeZKey(fileName, zkey) {
+
+    let curve = getCurveFromQ(zkey.q);
+
+    const fd = await createBinFile(fileName,"zkey", 1, 9);
+
+    await writeHeader(fd, zkey);
+    const n8r = (Math.floor( (Scalar.bitLength(zkey.r) - 1) / 64) +1)*8;
+    const Rr = Scalar.mod(Scalar.shl(1, n8r*8), zkey.r);
+    const R2r = Scalar.mod(Scalar.mul(Rr,Rr), zkey.r);
+
+    // Write Pols (A and B (C can be ommited))
+    ///////////
+
+    zkey.ccoefs = zkey.ccoefs.filter(c => c.matrix<2);
+    zkey.ccoefs.sort( (a,b) => a.constraint - b.constraint );
+    await startWriteSection(fd, 4);
+    await fd.writeULE32(zkey.ccoefs.length);
+    for (let i=0; i<zkey.ccoefs.length; i++) {
+        const coef = zkey.ccoefs[i];
+        await fd.writeULE32(coef.matrix);
+        await fd.writeULE32(coef.constraint);
+        await fd.writeULE32(coef.signal);
+        await writeFr2(coef.value);
+    }
+    await endWriteSection(fd);
+
+
+    // Write IC Section
+    ///////////
+    await startWriteSection(fd, 3);
+    for (let i=0; i<= zkey.nPublic; i++) {
+        await writeG1(fd, curve, zkey.IC[i] );
+    }
+    await endWriteSection(fd);
+
+
+    // Write A
+    ///////////
+    await startWriteSection(fd, 5);
+    for (let i=0; i<zkey.nVars; i++) {
+        await writeG1(fd, curve, zkey.A[i]);
+    }
+    await endWriteSection(fd);
+
+    // Write B1
+    ///////////
+    await startWriteSection(fd, 6);
+    for (let i=0; i<zkey.nVars; i++) {
+        await writeG1(fd, curve, zkey.B1[i]);
+    }
+    await endWriteSection(fd);
+
+    // Write B2
+    ///////////
+    await startWriteSection(fd, 7);
+    for (let i=0; i<zkey.nVars; i++) {
+        await writeG2(fd, curve, zkey.B2[i]);
+    }
+    await endWriteSection(fd);
+
+    // Write C
+    ///////////
+    await startWriteSection(fd, 8);
+    for (let i=zkey.nPublic+1; i<zkey.nVars; i++) {
+        await writeG1(fd, curve, zkey.C[i]);
+    }
+    await endWriteSection(fd);
+
+
+    // Write H points
+    ///////////
+    await startWriteSection(fd, 9);
+    for (let i=0; i<zkey.domainSize; i++) {
+        await writeG1(fd, curve, zkey.hExps[i]);
+    }
+    await endWriteSection(fd);
+
+    await fd.close();
+
+    async function writeFr2(n) {
+        // Convert to montgomery
+        n = Scalar.mod( Scalar.mul(n, R2r), zkey.r);
+
+        await writeBigInt(fd, n, n8r);
+    }
+
+}
+
 async function writeG1(fd, curve, p) {
     const buff = new Uint8Array(curve.G1.F.n8*2);
     curve.G1.toRprLEM(buff, 0, p);
@@ -2839,6 +2928,19 @@ function hashPubKey(hasher, curve, c) {
     hashG2(hasher, curve, c.delta.g2_spx);
     hasher.update(c.transcript);
 }
+
+var zkey_utils = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    writeHeader: writeHeader,
+    writeZKey: writeZKey,
+    readHeader: readHeader$1,
+    readZKey: readZKey,
+    readMPCParams: readMPCParams,
+    writeMPCParams: writeMPCParams,
+    hashG1: hashG1,
+    hashG2: hashG2,
+    hashPubKey: hashPubKey
+});
 
 /*
     Copyright 2018 0KIMS association.
@@ -16036,4 +16138,4 @@ var fflonk = /*#__PURE__*/Object.freeze({
     exportSolidityCallData: fflonkExportCallData
 });
 
-export { fflonk, groth16, plonk, powersoftau as powersOfTau, r1cs, wtns, zkey as zKey };
+export { fflonk, groth16, plonk, powersoftau as powersOfTau, r1cs, zkey_utils as utils, wtns, zkey as zKey };

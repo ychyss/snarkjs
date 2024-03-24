@@ -68,3 +68,7 @@ tmp
 
 .DS_Store
 stats.html
+
+snarkjs_example/
+
+package-lock.json
